@@ -8,6 +8,8 @@ BACKUP_REMOTE_REPOSITORY=${3}
 
 SYNAPSE_DATA_DIR=${4}
 SYNAPSE_DB_DIR=${5}
+INTENDED_FILE_OWNER=${6}
+IDENTITY_FILE="/home/${INTENDED_FILE_OWNER}/.ssh/id_rsa"
 
 BACKUP_DIR=${BACKUP_TAG}
 BACKUP_LOG_FILENAME="${BACKUP_TAG}.log"
@@ -53,7 +55,7 @@ function copy_path_remote() {
 	target=${2}
 
 	# apply -r (recursive) which works both on folders and files
-	run_critical "scp -r ${source} ${target}" 
+	run_critical "scp -r -i ${IDENTITY_FILE} ${source} ${target}" 
 }
 
 function test_remote_path() {
@@ -105,9 +107,9 @@ run_and_log "mkdir ${BACKUP_DIR}"
 run_critical "systemctl stop docker-compose-matrix"
 
 # tar.gz the matrix data folder
-run_critical "tar -zcvf ${BACKUP_DIR}/${BACKUP_TAG}_data.tar.gz ${SYNAPSE_DATA_DIR}"
+run_and_log "tar -zcvf ${BACKUP_DIR}/${BACKUP_TAG}_data.tar.gz ${SYNAPSE_DATA_DIR}"
 # tar.gz the database filesystem
-run_critical "tar -zcvf ${BACKUP_DIR}/${BACKUP_TAG}_db.tar.gz ${SYNAPSE_DB_DIR}"
+run_and_log "tar -zcvf ${BACKUP_DIR}/${BACKUP_TAG}_db.tar.gz ${SYNAPSE_DB_DIR}"
 
 # restart the service
 run_critical "systemctl start docker-compose-matrix"
@@ -120,4 +122,5 @@ run_critical "mv ${BACKUP_DIR} ${BACKUP_LOCAL_REPOSITORY}"
 
 # end - copy log files; this is not logged :)
 cp ${BACKUP_LOG_FILENAME} ${BACKUP_LOCAL_REPOSITORY}/${BACKUP_DIR}
+chown -R ${INTENDED_FILE_OWNER}:${INTENDED_FILE_OWNER} ${BACKUP_LOCAL_REPOSITORY}/${BACKUP_DIR}
 copy_path_remote ${BACKUP_LOG_FILENAME} ${BACKUP_REMOTE_REPOSITORY}/${BACKUP_DIR}
