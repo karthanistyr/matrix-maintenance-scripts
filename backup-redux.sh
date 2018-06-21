@@ -33,6 +33,7 @@ function echo_run() {
 	echo "[$(ts)] ${command}"
 	${command} 2>&1
 	result=$?
+	echo "Done; code: ${result}"
 	if [[ ${result} -gt 0 && ${GLOBAL_EXIT_CODE} -eq 0 ]]
 	then
 		GLOBAL_EXIT_CODE=${result}
@@ -131,7 +132,8 @@ fi
 
 # here are a few magic variables
 
-BACKUP_TAG="matrix-backup_`date +"%F_%H-%M-%S.%N"`"
+# BACKUP_TAG="matrix-backup_`date +"%F_%H-%M-%S.%N"`"
+BACKUP_TAG="matrix-backup" # this will make copies overwrite
 BACKUP_DIR=${BACKUP_TAG}
 IDENTITY_FILE="/home/${BACKUP_FILE_OWNER}/.ssh/id_rsa"
 GLOBAL_EXIT_CODE=0 # hope for the best!
@@ -189,7 +191,7 @@ then
 	echo_run "systemctl start docker-compose-matrix"
 
 	copy_path_remote ${BACKUP_STAGING_DIR}/${BACKUP_DIR} ${BACKUP_REMOTE_REPOSITORY}
-	echo_run "mv ${BACKUP_STAGING_DIR}/${BACKUP_DIR} ${BACKUP_LOCAL_REPOSITORY}"
+	echo_run "cp -r ${BACKUP_STAGING_DIR}/${BACKUP_DIR} ${BACKUP_LOCAL_REPOSITORY}"
 	echo_run "chown -R ${BACKUP_FILE_OWNER}:${BACKUP_FILE_OWNER} ${BACKUP_LOCAL_REPOSITORY}/${BACKUP_DIR}"
 
 	echo
